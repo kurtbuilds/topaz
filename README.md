@@ -50,6 +50,8 @@ pub fn start() {
 - [ ] Figure out the best API for defining components.
 - [ ] Remove the dependency on webpack (webpack needs to die painfully in a large inferno)
 - [ ] Server side rendering (make sure everything compiles on regular targets, besides wasm32-unknown-unknown
+- [ ] `html!` should support multiple children
+- [ ] IntelliJ should realize we're writing almost html inside `html!`.
 
 My previous dabbling on Rust frontend is 
 [https://github.com/kurtbuilds/rust-frontend](https://github.com/kurtbuilds/rust-frontend)

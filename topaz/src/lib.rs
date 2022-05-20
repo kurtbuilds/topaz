@@ -2,6 +2,7 @@
 mod observable;
 pub mod bind;
 pub mod global;
+mod dom;
 
 #[cfg(feature = "capture-print")]
 pub fn hook_println() {
@@ -33,6 +34,4 @@ pub fn start() {
     hook_println();
     #[cfg(feature = "capture-panic")]
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-
-    println!("Hello, world!");
 }

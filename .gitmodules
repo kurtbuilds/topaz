@@ -1,0 +1,3 @@
+[submodule "percy"]
+	path = percy
+	url = https://github.com/kurtbuilds/percy

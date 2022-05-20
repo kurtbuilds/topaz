@@ -1,4 +1,6 @@
 use std::ops::{Deref, DerefMut};
+use web_sys::{Element, Node};
+use crate::global::window::web_sys_window;
 
 #[derive(Clone)]
 pub struct DocumentData {
@@ -28,8 +30,20 @@ impl Document {
         }
     }
 
-    pub fn get_element_by_id(&self, id: &str) {
-        todo!();
+    pub fn get_element_by_id(&self, id: &str) -> Option<Element> {
+        web_sys_window().document().expect("Failed to get document")
+            .get_element_by_id(id)
+    }
+
+    pub fn get_elements_by_tag_name(&self, tag_name: &str) -> Vec<crate::dom::Element> {
+        let collection = web_sys_window().document().expect("Failed to get document")
+            .get_elements_by_tag_name(tag_name);
+        let max = collection.length();
+        (0..max)
+            .map(|i| crate::dom::Element::new(
+                collection.item(i).expect("Failed to get element")
+            ))
+            .collect()
     }
 }
 

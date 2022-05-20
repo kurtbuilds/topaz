@@ -2,6 +2,7 @@ mod document;
 mod timer;
 mod fetch;
 mod window;
+mod history;
 
 pub use fetch::fetch;
 pub use document::document;
