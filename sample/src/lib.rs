@@ -128,55 +128,56 @@ fn recurse(node: &VirtualNode) {
 pub fn start() {
     topaz::start();
 
-    let window = web_sys::window().unwrap();
-    let document = window.document().unwrap();
-    let body = document.body().unwrap();
+    fn internal() {
+        let mut clicks = Rc::new(RefCell::new(0));
+        let a = {
+            let mut clicks = clicks.clone();
+            move |_| {
+                let mut z = clicks.borrow_mut();
+                println!("reset clicks: {}", *z);
+                *z = 0;
+                let doc = global::document();
+                let ps = doc.get_elements_by_tag_name("p");
+                let p = &ps[0];
+                p.inner.set_text_content(Some(&format!("Counter: {}", *z)));
+            }
+        };
 
-    let z = html! {
-        <div>
-            <Nav/>
-            <p>Counter</p>
-            <button onclick=move|_event: MouseEvent| {
-                web_sys::console::log_1(&"clicked!".into());
-            }>
-                +1
-            </button>
-        </div>
-    };
+        {
+            let mut clicks = clicks.clone();
+            global::set_interval(move || {
+                let doc = global::document();
+                let ps = doc.get_elements_by_tag_name("p");
+                let p = &ps[0];
+                let mut z = clicks.borrow_mut();
+                *z += 1;
+                p.inner.set_text_content(Some(&format!("Counter: {}", *z)));
+                println!("update: {}", *z);
+            }, 500)
+        };
 
-    let mut clicks = Rc::new(RefCell::new(0));
-    let a = {
-        let mut clicks = clicks.clone();
-        move |_| {
-            let mut z = clicks.borrow_mut();
-            println!("reset clicks: {}", *z);
-            *z = 0;
-            let doc = global::document();
-            let ps = doc.get_elements_by_tag_name("p");
-            let p = &ps[0];
-            p.inner.set_text_content(Some(&format!("Counter: {}", *z)));
-        }
-    };
+        let window = web_sys::window().unwrap();
+        let document = window.document().unwrap();
+        let body = document.body().unwrap();
 
-    body.set_inner_html(&z.to_string());
+        let z = html! {
+            <div>
+                <Nav/>
+                <p>Counter:</p>
+                <button onclick=move|_event: MouseEvent| {
+                    web_sys::console::log_1(&"clicked!".into());
+                }>
+                    +1
+                </button>
+            </div>
+        };
 
-    let doc = global::document();
-    let buttons = doc.get_elements_by_tag_name("button");
-    let button = buttons.get(0).unwrap().clone();
-    let on_click = button.add_permanent_event_listener("click", a);
+        body.set_inner_html(&z.to_string());
+        let doc = global::document();
+        let buttons = doc.get_elements_by_tag_name("button");
+        let button = buttons.get(0).unwrap().clone();
+        let on_click = button.add_permanent_event_listener("click", a);
+    }
 
-    {
-        let mut clicks = clicks.clone();
-        global::set_interval(move || {
-            let doc = global::document();
-            let ps = doc.get_elements_by_tag_name("p");
-            let p = &ps[0];
-            let mut z = clicks.borrow_mut();
-            *z += 1;
-            p.inner.set_text_content(Some(&format!("Counter: {}", *z)));
-            println!("update: {}", *z);
-        }, 500)
-    };
-
-    alert(&format!("Hello, {}!", "Foobar"));
+    internal();
 }
