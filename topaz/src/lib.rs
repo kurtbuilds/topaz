@@ -1,3 +1,4 @@
+#![allow(unused)]
 #![cfg_attr(feature = "capture-print", feature(internal_output_capture))]
 mod observable;
 pub mod bind;

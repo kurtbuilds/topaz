@@ -8,16 +8,12 @@ pub struct TimeoutId(u32);
 #[derive(Debug, Clone, Copy)]
 pub struct IntervalId(u32);
 
-///
-/// # Examples
-///
-/// ```
-/// let t = topaz::global::set_timeout(|| {
-///      println!("Printed after 1s");
-/// }, 1000);
-/// ```
-pub fn set_timeout<F: FnOnce() + 'static>(callback: F, millis: u32) -> TimeoutId {
-    let a = Closure::once(Box::new(callback) as Box<dyn FnOnce()>);
+
+/// Splitting this separate from the `set_timeout` function provides a monomorphization benefit
+/// The only fn that gets monomorphized is the `set_timeout` function, but it's body is extremely
+/// cheap.
+fn set_timeout_boxed(callback: Box<dyn FnOnce() + 'static>, millis: u32) -> TimeoutId {
+    let a = Closure::once(callback);
     let window = web_sys_window();
     let timeout = window
         .set_timeout_with_callback_and_timeout_and_arguments_0(a.as_ref().unchecked_ref(), millis as i32)
@@ -26,14 +22,33 @@ pub fn set_timeout<F: FnOnce() + 'static>(callback: F, millis: u32) -> TimeoutId
     TimeoutId(timeout as u32)
 }
 
-pub fn set_interval<F: FnMut() + 'static>(callback: F, timeout: u32) -> IntervalId {
-    let a = Closure::wrap(Box::new(callback) as Box<dyn FnMut()>);
+///
+/// # Examples
+///
+/// ```
+/// let t = topaz::global::set_timeout(|| {
+///      println!("Printed after 1s");
+/// }, 1000);
+/// ```
+// TODO measure if inline actually does anything here.
+#[inline]
+pub fn set_timeout(callback: impl FnOnce() + 'static, millis: u32) -> TimeoutId {
+    set_timeout_boxed(Box::new(callback), millis)
+}
+
+fn set_interval_boxed(callback: Box<dyn FnMut() + 'static>, timeout: u32) -> IntervalId {
+    let a = Closure::wrap(callback);
     let window = web_sys_window();
     let timeout = window
         .set_interval_with_callback_and_timeout_and_arguments_0(a.as_ref().unchecked_ref(), timeout as i32)
         .expect("set_timeout failed");
     a.forget();
     IntervalId(timeout as u32)
+}
+
+#[inline]
+pub fn set_interval(callback: impl FnMut() + 'static, timeout: u32) -> IntervalId {
+    set_interval_boxed(Box::new(callback), timeout)
 }
 
 

@@ -1,3 +1,4 @@
+#![feature(box_syntax)]
 #![allow(unused)]
 #![allow(non_snake_case)]
 
@@ -77,7 +78,6 @@ pub fn start() {
             <Nav/>
             <p>Counter</p>
             <button onclick=move|_event: MouseEvent| {
-                // println!("clicked");
                 web_sys::console::log_1(&"clicked!".into());
             }>
                 Click me!
@@ -86,21 +86,24 @@ pub fn start() {
     };
 
     let mut clicks = 0;
-    let a = Closure::wrap(Box::new(move || {
+    let a = move |_| {
         clicks += 1;
         println!("clicked {} times", clicks);
-    }) as Box<dyn FnMut()>);
+    };
 
-    recurse(&z);
     body.set_inner_html(&z.to_string());
 
     let doc = global::document();
     let buttons = doc.get_elements_by_tag_name("button");
-    let button = buttons.get(0).unwrap();
-    button.inner.add_event_listener_with_callback("click", a.as_ref().unchecked_ref()).unwrap();
+    let button = buttons.get(0).unwrap().clone();
+    let listener = button.add_removable_event_listener("click", a);
+
+    global::set_timeout(move || {
+        println!("dropping the event listener");
+        button.remove_event_listener(listener);
+    }, 5_000);
 
     println!("buttons: {:?}", buttons);
 
     alert(&format!("Hello, {}!", "Foobar"));
-    a.forget();
 }
