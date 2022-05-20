@@ -4,6 +4,8 @@ mod observable;
 pub mod bind;
 pub mod global;
 mod dom;
+pub mod state2;
+
 
 #[cfg(feature = "capture-print")]
 pub fn hook_println() {

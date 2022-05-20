@@ -2,14 +2,19 @@
 #![allow(unused)]
 #![allow(non_snake_case)]
 
+use std::borrow::Borrow;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::rc::Rc;
+use std::cell::RefCell;
 
 use std::io::Read;
+use std::ops::Deref;
+use std::pin::Pin;
 use wasm_bindgen::prelude::*;
 use topaz::bind::*;
 use topaz::global;
+use topaz::state;
 use topaz::global::set_timeout;
 use percy_dom::{VirtualNode, html, View};
 use percy_dom::event::{EventName, MouseEvent};
@@ -38,6 +43,19 @@ fn Nav2() -> VirtualNode {
 }
 
 
+
+// fn Counter() -> VirtualNode {
+//     let counter = state!(0);
+//     html! {
+//         <p> Counter: {counter} </p>
+//         <button onclick=|_| {
+//             counter += 1;
+//         }>
+//             +1
+//         </button>
+//     }
+// }
+
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = Math)]
@@ -59,15 +77,56 @@ fn recurse(node: &VirtualNode) {
     }
 }
 
+// pub struct FakeAtomicUsize {
+//     pub value: Pin<*mut usize>
+// }
+//
+// unsafe impl Send for FakeAtomicUsize {}
+// unsafe impl Sync for FakeAtomicUsize {}
+//
+// impl Clone for FakeAtomicUsize {
+//     fn clone(&self) -> Self {
+//         let ptr: *mut usize = &**self as *const _ as *mut _;
+//         FakeAtomicUsize {
+//             value: unsafe { Pin::new(&mut *ptr) }
+//         }
+//     }
+// }
+//
+// impl std::ops::Deref for FakeAtomicUsize {
+//     type Target = usize;
+//     fn deref(&self) -> &Self::Target {
+//         self.value.deref()
+//     }
+// }
+//
+// impl std::ops::DerefMut for FakeAtomicUsize {
+//     fn deref_mut(&mut self) -> &mut Self::Target {
+//         self.value.deref_mut()
+//     }
+// }
+//
+// impl std::fmt::Display for FakeAtomicUsize {
+//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+//         write!(f, "{}", *self.value)
+//     }
+// }
+//
+// impl std::fmt::Pointer for FakeAtomicUsize {
+//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+//         write!(f, "{:p}", &**self.value.deref())
+//     }
+// }
+//
+// impl Drop for FakeAtomicUsize {
+//     fn drop(&mut self) {
+//         std::mem::forget(self);
+//     }
+// }
 
 #[wasm_bindgen]
 pub fn start() {
     topaz::start();
-
-    {
-        let mut doc = global::document();
-        doc.title = "Topaz".to_string();
-    }
 
     let window = web_sys::window().unwrap();
     let document = window.document().unwrap();
@@ -80,15 +139,23 @@ pub fn start() {
             <button onclick=move|_event: MouseEvent| {
                 web_sys::console::log_1(&"clicked!".into());
             }>
-                Click me!
+                +1
             </button>
         </div>
     };
 
-    let mut clicks = 0;
-    let a = move |_| {
-        clicks += 1;
-        println!("clicked {} times", clicks);
+    let mut clicks = Rc::new(RefCell::new(0));
+    let a = {
+        let mut clicks = clicks.clone();
+        move |_| {
+            let mut z = clicks.borrow_mut();
+            println!("reset clicks: {}", *z);
+            *z = 0;
+            let doc = global::document();
+            let ps = doc.get_elements_by_tag_name("p");
+            let p = &ps[0];
+            p.inner.set_text_content(Some(&format!("Counter: {}", *z)));
+        }
     };
 
     body.set_inner_html(&z.to_string());
@@ -96,14 +163,20 @@ pub fn start() {
     let doc = global::document();
     let buttons = doc.get_elements_by_tag_name("button");
     let button = buttons.get(0).unwrap().clone();
-    let listener = button.add_removable_event_listener("click", a);
+    let on_click = button.add_permanent_event_listener("click", a);
 
-    global::set_timeout(move || {
-        println!("dropping the event listener");
-        button.remove_event_listener(listener);
-    }, 5_000);
-
-    println!("buttons: {:?}", buttons);
+    {
+        let mut clicks = clicks.clone();
+        global::set_interval(move || {
+            let doc = global::document();
+            let ps = doc.get_elements_by_tag_name("p");
+            let p = &ps[0];
+            let mut z = clicks.borrow_mut();
+            *z += 1;
+            p.inner.set_text_content(Some(&format!("Counter: {}", *z)));
+            println!("update: {}", *z);
+        }, 500)
+    };
 
     alert(&format!("Hello, {}!", "Foobar"));
 }
