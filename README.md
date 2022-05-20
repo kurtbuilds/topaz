@@ -35,10 +35,21 @@ pub fn start() {
 }
 ```
 
+# Running the example
+
+1. Clone the repo
+2. Navigate to `sample/`
+3. Run `just run`
+
 # Roadmap
 
 - [x] Document object with writeable pub `.title` field.
 - [x] `println!` goes to console.log.
 - [x] Make `println!` go to console.log from a web worker / in a loop.
-- [ ] Figure out the best way to do DOM updates
-- [ ] Remove the dependency on webpack (webpack needs to burn in a large inferno)
+- [ ] Figure out the best API & implementation to do DOM updates
+- [ ] Figure out the best API for defining components.
+- [ ] Remove the dependency on webpack (webpack needs to die painfully in a large inferno)
+
+My previous dabbling on Rust frontend is 
+[https://github.com/kurtbuilds/rust-frontend](https://github.com/kurtbuilds/rust-frontend)
+which contains more notes on desired properties for a frontend framework.
