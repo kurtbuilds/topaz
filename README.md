@@ -56,3 +56,125 @@ pub fn start() {
 My previous dabbling on Rust frontend is 
 [https://github.com/kurtbuilds/rust-frontend](https://github.com/kurtbuilds/rust-frontend)
 which contains more notes on desired properties for a frontend framework.
+
+
+# Why not Yew?
+
+List of things to change about yew:
+- [ ] classes! should be implicit: https://yew.rs/docs/next/concepts/basic-web-technologies/css . Verbose otherwise.
+- [ ] Bare words in html macro.
+- [ ] Route should take url string or enum (https://yew.rs/docs/next/concepts/router)
+- [ ] Yew is slow. Better than React but worse than Solid or wasm-bindgen.
+- [ ] Something about it just feels very non-Rusty but also non-Javascripty? https://yew.rs/docs/next/concepts/html/components
+    - [ ] Decide how you'd rewrite each of their examples to be less verbose?
+
+
+
+### Yew Replacement
+
+From
+
+```rust
+#[function_component]
+fn MyComponent() -> Html {
+    html! {
+        { "This component has no properties!" }
+    }
+}
+```
+
+to 
+
+```
+pub fn MyComponent() -> Html {
+    html! {
+        This component has no properties!
+    }
+}
+```
+
+From
+
+```rust
+#[derive(Clone, PartialEq, Properties)]
+struct Props {
+    first_name: String,
+    last_name: String,
+}
+
+#[function_component]
+fn MyComponentWithProps(props: &Props) -> Html {
+    let Props { first_name, last_name } = props;
+    html! {
+        <>first_name: {first_name} and last_name: {last_name}</>
+    }
+}
+```
+
+to
+
+```rust
+pub fn MyComponentWithProps(
+    first_name: String,
+    last_name: String,
+) -> Html {
+    html! {
+        first_name: {first_name} and last_name: {last_name}
+    }
+}
+```
+
+From
+
+```rust
+
+#[derive(PartialEq, Properties)]
+struct Props {
+    id: String,
+    children: Children,
+}
+
+#[function_component]
+fn Container(props: &Props) -> Html {
+    html! {
+        <div id={props.id.clone()}>
+            { props.children.clone() }
+        </div>
+    }
+}
+```
+
+to
+
+```rust
+fn Container(
+    id: String,
+    children: Children,
+) -> Html {
+    html! {
+        <div id={id}>
+            { children }
+        </div>
+    }
+}
+```
+
+They have some weird "For" syntax, see: https://yew.rs/docs/next/concepts/html/components#basic
+Instead, Iterable<Html> should be templateable within html! macro. (Don't need to `.collect()`. )
+
+Seems like they don't have keying always turned on? https://yew.rs/docs/next/concepts/html/lists
+
+Is there a way to have intellij understand the html! macros?
+- https://intellij-rust.github.io/2021/12/20/changelog-162.html
+- https://github.com/intellij-rust/intellij-rust/issues/6732
+- https://github.com/yewstack/yew/issues/439
+- https://github.com/yewstack/yew/issues/1671
+- https://github.com/intellij-rust/intellij-rust/issues/8076
+
+
+Compiler should build by the item, not by the crate.
+https://github.com/rust-lang/rust/issues/94878
+https://github.com/rust-lang/rust/issues?q=is%3Aopen+author%3Acjgillot+
+https://rust-lang.zulipchat.com/#narrow/stream/182449-t-compiler.2Fhelp
+
+Fixing this would be *massively* transformative, because it would also unlock parallelizing the build of a crate, whereas right now its single core.

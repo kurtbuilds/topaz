@@ -37,6 +37,19 @@ impl View for Nav {
     }
 }
 
+
+
+pub fn Nav(
+    props: Props,
+) -> Html {
+
+    html! {
+        <nav>
+        </nav>
+    }
+}
+
+
 fn Nav2() -> VirtualNode {
     html! {
         <div>
