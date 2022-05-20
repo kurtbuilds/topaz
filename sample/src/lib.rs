@@ -20,6 +20,8 @@ use percy_dom::{VirtualNode, html, View};
 use percy_dom::event::{EventName, MouseEvent};
 use percy_dom::PercyDom;
 use wasm_bindgen::JsCast;
+use web_sys::window;
+use percy_dom::IterableNodes;
 
 
 struct Nav {
@@ -128,56 +130,74 @@ fn recurse(node: &VirtualNode) {
 pub fn start() {
     topaz::start();
 
-    fn internal() {
-        let mut clicks = Rc::new(RefCell::new(0));
-        let a = {
+    let mut clicks = Rc::new(RefCell::new(0));
+    let mut first = Rc::new(RefCell::new(true));
+
+    fn render(
+        first: Rc<RefCell<bool>>,
+        clicks: Rc<RefCell<usize>>,
+    ) {
+        let on_click = {
             let mut clicks = clicks.clone();
+            let mut first = first.clone();
             move |_| {
                 let mut z = clicks.borrow_mut();
                 println!("reset clicks: {}", *z);
                 *z = 0;
-                let doc = global::document();
-                let ps = doc.get_elements_by_tag_name("p");
-                let p = &ps[0];
-                p.inner.set_text_content(Some(&format!("Counter: {}", *z)));
+                drop(z);
+                render(first.clone(), clicks.clone());
             }
         };
 
-        {
-            let mut clicks = clicks.clone();
-            global::set_interval(move || {
-                let doc = global::document();
-                let ps = doc.get_elements_by_tag_name("p");
-                let p = &ps[0];
-                let mut z = clicks.borrow_mut();
-                *z += 1;
-                p.inner.set_text_content(Some(&format!("Counter: {}", *z)));
-                println!("update: {}", *z);
-            }, 500)
+        let is_first = {
+            let mut first = first.clone();
+            let mut is_first = first.borrow_mut();
+            let cur = *is_first;
+            if cur {
+                *is_first = false;
+            }
+            cur
+        };
+        if (is_first) {
+            {
+                let mut clicks = clicks.clone();
+                global::set_interval(move || {
+                    let doc = global::document();
+                    let ps = doc.get_elements_by_tag_name("p");
+                    let p = &ps[0];
+                    let mut z = clicks.borrow_mut();
+                    *z += 1;
+                    println!("update: {}", *z);
+                    drop(z);
+                    render(first.clone(), clicks.clone());
+                }, 500)
+            };
+
+        }
+
+
+        let z = {
+            let mut clicks = clicks.borrow_mut();
+            html! {
+                <div>
+                    <Nav/>
+                    <p>Counter: {*clicks}</p>
+                    <button onclick=move|_event: MouseEvent| {
+                        web_sys::console::log_1(&"clicked!".into());
+                    }>
+                        +1
+                    </button>
+                </div>
+            }
         };
 
-        let window = web_sys::window().unwrap();
-        let document = window.document().unwrap();
-        let body = document.body().unwrap();
-
-        let z = html! {
-            <div>
-                <Nav/>
-                <p>Counter:</p>
-                <button onclick=move|_event: MouseEvent| {
-                    web_sys::console::log_1(&"clicked!".into());
-                }>
-                    +1
-                </button>
-            </div>
-        };
-
+        let body = window().unwrap().document().unwrap().body().unwrap();
         body.set_inner_html(&z.to_string());
         let doc = global::document();
         let buttons = doc.get_elements_by_tag_name("button");
         let button = buttons.get(0).unwrap().clone();
-        let on_click = button.add_permanent_event_listener("click", a);
-    }
+        let on_click = button.add_permanent_event_listener("click", on_click);
+    };
 
-    internal();
+    render(first, clicks);
 }
