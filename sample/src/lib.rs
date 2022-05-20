@@ -45,26 +45,6 @@ fn Nav2() -> VirtualNode {
 }
 
 
-
-// fn Counter() -> VirtualNode {
-//     let counter = state!(0);
-//     html! {
-//         <p> Counter: {counter} </p>
-//         <button onclick=|_| {
-//             counter += 1;
-//         }>
-//             +1
-//         </button>
-//     }
-// }
-
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = Math)]
-    fn random() -> f64;
-}
-
-
 fn recurse(node: &VirtualNode) {
     match node {
         VirtualNode::Element(e) => {
@@ -79,104 +59,55 @@ fn recurse(node: &VirtualNode) {
     }
 }
 
-// pub struct FakeAtomicUsize {
-//     pub value: Pin<*mut usize>
-// }
-//
-// unsafe impl Send for FakeAtomicUsize {}
-// unsafe impl Sync for FakeAtomicUsize {}
-//
-// impl Clone for FakeAtomicUsize {
-//     fn clone(&self) -> Self {
-//         let ptr: *mut usize = &**self as *const _ as *mut _;
-//         FakeAtomicUsize {
-//             value: unsafe { Pin::new(&mut *ptr) }
-//         }
-//     }
-// }
-//
-// impl std::ops::Deref for FakeAtomicUsize {
-//     type Target = usize;
-//     fn deref(&self) -> &Self::Target {
-//         self.value.deref()
-//     }
-// }
-//
-// impl std::ops::DerefMut for FakeAtomicUsize {
-//     fn deref_mut(&mut self) -> &mut Self::Target {
-//         self.value.deref_mut()
-//     }
-// }
-//
-// impl std::fmt::Display for FakeAtomicUsize {
-//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-//         write!(f, "{}", *self.value)
-//     }
-// }
-//
-// impl std::fmt::Pointer for FakeAtomicUsize {
-//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-//         write!(f, "{:p}", &**self.value.deref())
-//     }
-// }
-//
-// impl Drop for FakeAtomicUsize {
-//     fn drop(&mut self) {
-//         std::mem::forget(self);
-//     }
-// }
-
 #[wasm_bindgen]
 pub fn start() {
     topaz::start();
 
     let mut clicks = Rc::new(RefCell::new(0));
-    let mut first = Rc::new(RefCell::new(true));
+    let mut first_render = Rc::new(RefCell::new(true));
 
     fn render(
-        first: Rc<RefCell<bool>>,
+        first_render: Rc<RefCell<bool>>,
         clicks: Rc<RefCell<usize>>,
     ) {
         let on_click = {
             let mut clicks = clicks.clone();
-            let mut first = first.clone();
+            let mut first_render = first_render.clone();
             move |_| {
-                let mut z = clicks.borrow_mut();
-                println!("reset clicks: {}", *z);
-                *z = 0;
-                drop(z);
-                render(first.clone(), clicks.clone());
+                let mut clicks_borrow = clicks.borrow_mut();
+                println!("reset clicks: {}", *clicks_borrow);
+                *clicks_borrow = 0;
+                drop(clicks_borrow);
+                render(first_render.clone(), clicks.clone());
             }
         };
 
-        let is_first = {
-            let mut first = first.clone();
-            let mut is_first = first.borrow_mut();
-            let cur = *is_first;
-            if cur {
-                *is_first = false;
+        let is_first_render = {
+            let mut first_render = first_render.clone();
+            let mut first_render_borrow = first_render.borrow_mut();
+            let current_value = *first_render_borrow;
+            if current_value {
+                *first_render_borrow = false;
             }
-            cur
+            current_value
         };
-        if (is_first) {
+        if (is_first_render) {
             {
                 let mut clicks = clicks.clone();
                 global::set_interval(move || {
                     let doc = global::document();
                     let ps = doc.get_elements_by_tag_name("p");
                     let p = &ps[0];
-                    let mut z = clicks.borrow_mut();
-                    *z += 1;
-                    println!("update: {}", *z);
-                    drop(z);
-                    render(first.clone(), clicks.clone());
+                    let mut clicks_borrow = clicks.borrow_mut();
+                    *clicks_borrow += 1;
+                    println!("update: {}", *clicks_borrow);
+                    drop(clicks_borrow);
+                    render(first_render.clone(), clicks.clone());
                 }, 500)
             };
-
         }
 
-
-        let z = {
+        let vdom = {
             let mut clicks = clicks.borrow_mut();
             html! {
                 <div>
@@ -192,12 +123,12 @@ pub fn start() {
         };
 
         let body = window().unwrap().document().unwrap().body().unwrap();
-        body.set_inner_html(&z.to_string());
+        body.set_inner_html(&vdom.to_string());
         let doc = global::document();
         let buttons = doc.get_elements_by_tag_name("button");
         let button = buttons.get(0).unwrap().clone();
         let on_click = button.add_permanent_event_listener("click", on_click);
     };
 
-    render(first, clicks);
+    render(first_render, clicks);
 }
