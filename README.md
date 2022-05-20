@@ -49,6 +49,7 @@ pub fn start() {
 - [ ] Figure out the best API & implementation to do DOM updates
 - [ ] Figure out the best API for defining components.
 - [ ] Remove the dependency on webpack (webpack needs to die painfully in a large inferno)
+- [ ] Server side rendering (make sure everything compiles on regular targets, besides wasm32-unknown-unknown
 
 My previous dabbling on Rust frontend is 
 [https://github.com/kurtbuilds/rust-frontend](https://github.com/kurtbuilds/rust-frontend)
