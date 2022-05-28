@@ -24,8 +24,7 @@ use web_sys::window;
 use percy_dom::IterableNodes;
 
 
-struct Nav {
-}
+struct Nav {}
 
 impl View for Nav {
     fn render(&self) -> VirtualNode {
@@ -47,7 +46,7 @@ fn recurse(node: &VirtualNode) {
             for child in e.children.iter() {
                 recurse(child.clone());
             }
-        },
+        }
         VirtualNode::Text(_) => {}
     }
 }
@@ -68,9 +67,22 @@ pub fn start() {
             let mut first_render = first_render.clone();
             move |_| {
                 let mut clicks_borrow = clicks.borrow_mut();
-                println!("reset clicks: {}", *clicks_borrow);
-                *clicks_borrow = 0;
+                // println!("reset clicks: {}", *clicks_borrow);
+                *clicks_borrow += 1;
                 drop(clicks_borrow);
+                render(first_render.clone(), clicks.clone());
+            }
+        };
+
+        let on_navigate = {
+            let mut clicks = clicks.clone();
+            let mut first_render = first_render.clone();
+            move |_| {
+                global::history().push("/login");
+                // let mut clicks_borrow = clicks.borrow_mut();
+                // // println!("reset clicks: {}", *clicks_borrow);
+                // *clicks_borrow += 1;
+                // drop(clicks_borrow);
                 render(first_render.clone(), clicks.clone());
             }
         };
@@ -85,19 +97,19 @@ pub fn start() {
             current_value
         };
         if (is_first_render) {
-            {
-                let mut clicks = clicks.clone();
-                global::set_interval(move || {
-                    let doc = global::document();
-                    let ps = doc.get_elements_by_tag_name("p");
-                    let p = &ps[0];
-                    let mut clicks_borrow = clicks.borrow_mut();
-                    *clicks_borrow += 1;
-                    println!("update: {}", *clicks_borrow);
-                    drop(clicks_borrow);
-                    render(first_render.clone(), clicks.clone());
-                }, 500)
-            };
+            // {
+            //     let mut clicks = clicks.clone();
+            //     global::set_interval(move || {
+            //         let doc = global::document();
+            //         let ps = doc.get_elements_by_tag_name("p");
+            //         let p = &ps[0];
+            //         let mut clicks_borrow = clicks.borrow_mut();
+            //         *clicks_borrow += 1;
+            //         println!("update: {}", *clicks_borrow);
+            //         drop(clicks_borrow);
+            //         render(first_render.clone(), clicks.clone());
+            //     }, 500)
+            // };
         }
 
         let vdom = {
@@ -106,22 +118,26 @@ pub fn start() {
                 <div>
                     <Nav/>
                     <p>Counter: {*clicks}</p>
-                    <button onclick=move|_event: MouseEvent| {
+                    <button id="increment" onclick=move|_event: MouseEvent| {
                         web_sys::console::log_1(&"clicked!".into());
                     }>
                         +1
                     </button>
+                <button id="navigate">Navigate</button>
                 </div>
             }
         };
 
-        let body = window().unwrap().document().unwrap().body().unwrap();
+        let body = global::document().body();
         body.set_inner_html(&vdom.to_string());
         let doc = global::document();
-        let buttons = doc.get_elements_by_tag_name("button");
-        let button = buttons.get(0).unwrap().clone();
-        let on_click = button.add_permanent_event_listener("click", on_click);
-    };
+        let button = doc.get_element_by_id("increment").unwrap();
+        // let button = buttons.get(0).unwrap().clone();
+        button.add_permanent_event_listener("click", on_click);
+
+        let button = doc.get_element_by_id("navigate").unwrap();
+        button.add_permanent_event_listener("click", on_navigate);
+    }
 
     render(first_render, clicks);
 }
