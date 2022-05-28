@@ -10,7 +10,7 @@ pub fn history() -> History {
 }
 
 impl History {
-    pub fn global() -> History {
+    pub(crate) fn global() -> History {
         History {
             inner: web_sys::window().unwrap().history().unwrap(),
         }

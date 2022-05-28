@@ -87,6 +87,25 @@ pub fn start() {
             }
         };
 
+        let on_google = {
+            move |_| {
+                global::location().href = "https://google.com".to_string();
+            }
+        };
+
+        let on_anchor = {
+            move |_| {
+                use rand::distributions::Alphanumeric;
+                use rand::Rng;
+                let s: String = rand::thread_rng()
+                    .sample_iter(&Alphanumeric)
+                    .take(7)
+                    .map(char::from)
+                    .collect();
+                global::location().anchor = s;
+            }
+        };
+
         let is_first_render = {
             let mut first_render = first_render.clone();
             let mut first_render_borrow = first_render.borrow_mut();
@@ -96,6 +115,7 @@ pub fn start() {
             }
             current_value
         };
+
         if (is_first_render) {
             // {
             //     let mut clicks = clicks.clone();
@@ -112,6 +132,9 @@ pub fn start() {
             // };
         }
 
+        let location = global::location();
+        println!("Current path: {}, {:?}", location.path, location.query);
+
         let vdom = {
             let mut clicks = clicks.borrow_mut();
             html! {
@@ -124,6 +147,8 @@ pub fn start() {
                         +1
                     </button>
                 <button id="navigate">Navigate</button>
+                <button id="lmgtfy">LMGTFY</button>
+                <button id="anchor">Random Anchor</button>
                 </div>
             }
         };
@@ -132,11 +157,16 @@ pub fn start() {
         body.set_inner_html(&vdom.to_string());
         let doc = global::document();
         let button = doc.get_element_by_id("increment").unwrap();
-        // let button = buttons.get(0).unwrap().clone();
         button.add_permanent_event_listener("click", on_click);
 
         let button = doc.get_element_by_id("navigate").unwrap();
         button.add_permanent_event_listener("click", on_navigate);
+
+        let button = doc.get_element_by_id("lmgtfy").unwrap();
+        button.add_permanent_event_listener("click", on_google);
+
+        let button = doc.get_element_by_id("anchor").unwrap();
+        button.add_permanent_event_listener("click", on_anchor);
     }
 
     render(first_render, clicks);

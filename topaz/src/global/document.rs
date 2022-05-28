@@ -1,4 +1,3 @@
-use std::ops::{Deref, DerefMut};
 use web_sys::{Element, HtmlElement, Node};
 use crate::global::window::web_sys_window;
 
@@ -24,7 +23,7 @@ pub struct Document {
 }
 
 impl Document {
-    pub fn global() -> Self {
+    pub(crate) fn global() -> Self {
         let web_sys_doc = web_sys::window()
             .expect("no global `window` exists")
             .document()
@@ -61,15 +60,15 @@ impl Document {
     }
 }
 
-impl Deref for Document {
+impl std::ops::Deref for Document {
     type Target = DocumentData;
 
     fn deref(&self) -> &Self::Target {
-        &self.modifiable
+        &self.original
     }
 }
 
-impl DerefMut for Document {
+impl std::ops::DerefMut for Document {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.modifiable
     }
@@ -79,8 +78,7 @@ impl Drop for Document {
     fn drop(&mut self) {
         if self.modifiable.title != self.original.title {
             println!("Document title changed from {} to {}", self.original.title, self.modifiable.title);
-            // console_log!("document.title was updated from {} to {}", self.original.title, self.modifiable.title);
-            web_sys::window().unwrap().document().unwrap().set_title(&self.modifiable.title.clone())
+            self.inner.set_title(&self.modifiable.title);
         }
     }
 }

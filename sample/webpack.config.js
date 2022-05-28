@@ -24,5 +24,8 @@ module.exports = {
     mode: 'development',
     experiments: {
         asyncWebAssembly: true
+    },
+    devServer: {
+        historyApiFallback: true,
     }
 };
