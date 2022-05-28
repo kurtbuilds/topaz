@@ -39,7 +39,11 @@ impl Element {
     }
 
     /// This method exists for consistency with Javascript APIs.
-    /// This method requires the lifetime of self, so it's easier just to drop the EventListener directly.
+    /// This method requires the lifetime of self, so it's easier just to drop the EventListener directly:
+    ///
+    /// ```
+    /// drop(listener);
+    /// ```
     pub fn remove_event_listener(&self, listener: EventListener) {
         drop(listener);
     }
