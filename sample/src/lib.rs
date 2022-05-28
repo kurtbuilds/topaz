@@ -38,26 +38,6 @@ impl View for Nav {
 }
 
 
-
-pub fn Nav(
-    props: Props,
-) -> Html {
-
-    html! {
-        <nav>
-        </nav>
-    }
-}
-
-
-fn Nav2() -> VirtualNode {
-    html! {
-        <div>
-        </div>
-    }
-}
-
-
 fn recurse(node: &VirtualNode) {
     match node {
         VirtualNode::Element(e) => {

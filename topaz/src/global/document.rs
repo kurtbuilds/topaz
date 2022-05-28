@@ -9,7 +9,7 @@ pub struct DocumentData {
 
 impl DocumentData {
     /// Instantiate document data using values from web_sys.
-    pub fn from_web(doc: web_sys::Document) -> Self {
+    pub(crate) fn from_web(doc: web_sys::Document) -> Self {
         DocumentData {
             title: doc.title(),
         }
@@ -22,8 +22,12 @@ pub struct Document {
 }
 
 impl Document {
-    pub(crate) fn from_web(doc: web_sys::Document) -> Self {
-        let doc = DocumentData::from_web(doc);
+    pub fn global() -> Self {
+        let web_sys_doc = web_sys::window()
+            .expect("no global `window` exists")
+            .document()
+            .expect("should have a document on window");
+        let doc = DocumentData::from_web(web_sys_doc);
         Self {
             original: doc.clone(),
             modifiable: doc,
@@ -73,9 +77,6 @@ impl Drop for Document {
 
 /// The global function to get the document.
 pub fn document() -> Document {
-    let web_sys_doc = web_sys::window()
-        .expect("no global `window` exists")
-        .document()
-        .expect("should have a document on window");
-    Document::from_web(web_sys_doc)
+    Document::global()
+
 }
