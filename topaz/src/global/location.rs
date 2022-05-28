@@ -1,5 +1,59 @@
 use multimap::MultiMap;
 
+
+#[derive(Debug, Clone)]
+pub struct Query(MultiMap<String, String>);
+
+impl Query{
+    pub fn from_string(s: &str) -> Self {
+        let mut query = MultiMap::new();
+        if s.len() > 0 {
+            for pair in s[1..].split('&').filter(|s| !s.is_empty()) {
+                let mut pair = pair.splitn(2, '=');
+                let key = pair.next().unwrap();
+                let value = pair.next().unwrap_or("");
+                query.insert(key.to_string(), value.to_string());
+            }
+        }
+        Self(query)
+    }
+
+    pub fn to_string(&self) -> String {
+        let mut s = String::new();
+        if self.0.is_empty() {
+            return s;
+        }
+        s.push('?');
+        let mut first = true;
+        for (key, value) in self.0.iter() {
+            if first {
+                first = false;
+            } else {
+                s.push('&');
+            }
+            s.push_str(key);
+            s.push('=');
+            s.push_str(value);
+        }
+        s
+    }
+
+}
+
+impl std::fmt::Display for Query{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.to_string())
+    }
+}
+
+impl std::ops::Index<String> for Query {
+    type Output = String;
+
+    fn index(&self, key: String) -> &Self::Output {
+        &self.0[&key]
+    }
+}
+
 pub fn location() -> Location {
     Location::global()
 }
@@ -35,7 +89,7 @@ pub struct LocationData {
     pub anchor: String,
 
     // This could be a map of &str, &str, but that would be a pain to implement.
-    pub query: MultiMap<String, String>,
+    pub query: Query,
 
 }
 
@@ -53,26 +107,18 @@ impl LocationData {
             }
             hash
         };
-        let mut query = MultiMap::new();
-        if search.len() > 0 {
-            for pair in search[1..].split('&').filter(|s| !s.is_empty()) {
-                let mut pair = pair.splitn(2, '=');
-                let key = pair.next().unwrap();
-                let value = pair.next().unwrap_or("");
-                query.insert(key.to_string(), value.to_string());
-            }
-        }
+
 
         Self {
             href: location.href().unwrap(),
             scheme: protocol.clone(),
             pathname: path.clone(),
+            query: Query::from_string(&search),
             anchor,
             path,
             protocol,
             search,
             hash,
-            query,
         }
     }
 }

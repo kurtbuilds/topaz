@@ -37,6 +37,14 @@ impl View for Nav {
 }
 
 
+pub fn Nav2() -> VirtualNode {
+    html! {
+        <nav>
+            Branding | Login | Signup
+        </nav>
+    }
+}
+
 fn recurse(node: &VirtualNode) {
     match node {
         VirtualNode::Element(e) => {
