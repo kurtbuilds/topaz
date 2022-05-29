@@ -81,14 +81,15 @@ pub struct LocationData {
     /// Javascript: `window.location.search`.
     pub search: String,
 
+    /// Writeable field. Setting a new value will set a new hash.
     /// Staying consistent with Javascript, this has a leading `#` if non-empty. Use `anchor` to get the value without the `#`.
     /// Javascript: `window.location.hash`.
     pub hash: String,
 
+    /// Writeable field. Setting a new value will set a new hash.
     /// Prefer this to `hash`. Similar to `hash`, but without the leading `#`.
     pub anchor: String,
 
-    // This could be a map of &str, &str, but that would be a pain to implement.
     pub query: Query,
 
 }
